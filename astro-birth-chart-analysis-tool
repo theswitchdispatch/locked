@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natal Chart Analysis Tool — A Grounded Method</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy:        #2c3e50;
+            --accent:      #8b3a2a;
+            --accent-soft: #c17a5e;
+            --accent-faint:#f0e8e4;
+            --gold:        #b8860b;
+            --gold-faint:  #faf4e1;
+            --paper:       #f7f5f0;
+            --paper-dark:  #ede9e1;
+            --ink:         #1a1a1a;
+            --ink-muted:   #5a5a5a;
+            --ink-faint:   #9a9a9a;
+            --border:      rgba(26,26,26,0.12);
+            --white:       #ffffff;
+            --green:       #27ae60;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--paper);
+            color: var(--ink);
+            line-height: 1.7;
+        }
+
+        /* ── MASTHEAD ── */
+        .masthead {
+            background: var(--navy);
+            color: white;
+            padding: 5rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .masthead::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                45deg, transparent, transparent 40px,
+                rgba(255,255,255,0.015) 40px,
+                rgba(255,255,255,0.015) 41px
+            );
+        }
+
+        .masthead::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--accent-soft);
+        }
+
+        .masthead-eyebrow {
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .masthead h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.4rem, 5.5vw, 3.8rem);
+            font-weight: 500;
+            line-height: 1.12;
+            color: white;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+
+        .masthead h1 em {
+            font-style: italic;
+            color: var(--accent-soft);
+        }
+
+        .masthead-divider {
+            width: 40px;
+            height: 2px;
+            background: var(--accent-soft);
+            margin: 1.5rem auto;
+            position: relative;
+        }
+
+        .masthead-sub {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.5);
+            max-width: 460px;
+            margin: 0 auto;
+            font-weight: 300;
+            position: relative;
+            line-height: 1.75;
+        }
+
+        /* ── LAYOUT ── */
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 3.5rem 2rem 5rem;
+        }
+
+        /* ── FRAMING NOTE ── */
+        .framing {
+            background: white;
+            border-left: 3px solid var(--accent);
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 3.5rem;
+            font-size: 0.9rem;
+            color: var(--ink-muted);
+            line-height: 1.8;
+        }
+
+        .framing strong { color: var(--ink); font-weight: 600; }
+
+        /* ── SECTION HEADER ── */
+        .section-header {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--ink);
+        }
+
+        .section-num {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.2rem;
+            font-weight: 400;
+            color: var(--paper-dark);
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .section-title-wrap { flex: 1; }
+
+        .section-eyebrow {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            margin-bottom: 0.15rem;
+        }
+
+        .section-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: var(--ink);
+            line-height: 1.2;
+        }
+
+        .section { margin-bottom: 3.5rem; }
+
+        /* ── STEP CARDS ── */
+        .steps { display: flex; flex-direction: column; gap: 0; }
+
+        .step {
+            display: grid;
+            grid-template-columns: 40px 1fr;
+            background: white;
+            border: 1px solid var(--border);
+            border-top: none;
+            opacity: 0;
+            transform: translateY(12px);
+            animation: fadeUp 0.4s ease forwards;
+        }
+
+        .step:first-child { border-top: 1px solid var(--border); }
+        .step:nth-child(1) { animation-delay: 0.1s; }
+        .step:nth-child(2) { animation-delay: 0.2s; }
+        .step:nth-child(3) { animation-delay: 0.3s; }
+        .step:nth-child(4) { animation-delay: 0.4s; }
+        .step:nth-child(5) { animation-delay: 0.5s; }
+
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-num {
+            background: var(--navy);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            min-height: 56px;
+        }
+
+        .step-body { padding: 0.9rem 1.1rem; }
+
+        .step-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--ink);
+            margin-bottom: 0.3rem;
+        }
+
+        .step-desc {
+            font-size: 0.875rem;
+            color: var(--ink-muted);
+            line-height: 1.65;
+        }
+
+        .step-desc a {
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: none;
+            border-bottom: 1px solid var(--accent-soft);
+            transition: border-color 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .step-desc a:hover { border-color: var(--accent); }
+
+        /* ── URL CALLOUT ── */
+        .url-callout {
+            background: var(--gold-faint);
+            border-left: 3px solid var(--gold);
+            padding: 0.85rem 1.1rem;
+            margin-top: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .url-callout-link {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--navy);
+            text-decoration: none;
+            letter-spacing: 0.01em;
+        }
+
+        .url-callout-link:hover { text-decoration: underline; }
+
+        .url-callout-note {
+            font-size: 0.78rem;
+            color: var(--ink-faint);
+        }
+
+        /* ── PROMPT BLOCKS ── */
+        .prompt-section {
+            margin-bottom: 2rem;
+        }
+
+        .prompt-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            margin-bottom: 0.6rem;
+        }
+
+        .prompt-block {
+            background: #1a1a1a;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .prompt-block-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.7rem 1.1rem;
+            background: rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            gap: 1rem;
+        }
+
+        .prompt-block-meta {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.38);
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .prompt-block-tag {
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            background: var(--accent);
+            color: white;
+            padding: 0.2rem 0.55rem;
+            flex-shrink: 0;
+        }
+
+        .prompt-block-body {
+            padding: 1.25rem 1.4rem;
+            font-family: 'DM Sans', monospace;
+            font-size: 0.82rem;
+            line-height: 1.78;
+            color: rgba(255,255,255,0.8);
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .prompt-block-body strong {
+            color: var(--accent-soft);
+            font-weight: 600;
+        }
+
+        /* ── COPY BUTTON ── */
+        .copy-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--navy);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.1rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: background 0.2s;
+            letter-spacing: 0.03em;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .copy-btn:hover { background: var(--accent); }
+        .copy-btn.copied { background: var(--green); }
+
+        .copy-icon { font-size: 0.85rem; }
+
+        /* ── NOTES BOX ── */
+        .notes-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .note-card {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 1rem 1.1rem;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .note-icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .note-text {
+            font-size: 0.875rem;
+            color: var(--ink-muted);
+            line-height: 1.65;
+        }
+
+        .note-text strong {
+            display: block;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 0.15rem;
+            font-size: 0.88rem;
+        }
+
+        /* ── CLOSING ── */
+        .closing {
+            margin-top: 3rem;
+            background: var(--gold-faint);
+            border-top: 3px solid var(--gold);
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .closing p {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--ink-muted);
+            line-height: 1.8;
+        }
+
+        .closing p strong {
+            color: var(--ink);
+            font-style: normal;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            text-align: center;
+            padding: 1.75rem 2rem;
+            font-size: 0.75rem;
+            color: var(--ink-faint);
+            border-top: 1px solid var(--border);
+        }
+
+        /* ── PROSE ── */
+        .prose {
+            font-size: 0.92rem;
+            color: var(--ink-muted);
+            line-height: 1.8;
+            margin-bottom: 1.25rem;
+        }
+
+        .label-caps {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            margin: 1.25rem 0 0.5rem;
+        }
+
+        /* ── JUNGIAN BADGE ── */
+        .optional-badge {
+            display: inline-block;
+            background: var(--accent-faint);
+            color: var(--accent);
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.15rem 0.55rem;
+            margin-left: 0.6rem;
+            vertical-align: middle;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 600px) {
+
+            /* Masthead */
+            .masthead {
+                padding: 3rem 1.25rem 2.5rem;
+            }
+            .masthead-eyebrow {
+                font-size: 0.62rem;
+                letter-spacing: 0.14em;
+            }
+            .masthead-sub {
+                font-size: 0.88rem;
+            }
+
+            /* Layout */
+            .container {
+                padding: 2rem 1rem 3rem;
+            }
+            .section {
+                margin-bottom: 2.5rem;
+            }
+
+            /* Section headers — shrink the large number */
+            .section-header {
+                gap: 0.6rem;
+                margin-bottom: 1.25rem;
+            }
+            .section-num {
+                font-size: 2rem;
+            }
+            .section-title {
+                font-size: 1.3rem;
+            }
+            .section-eyebrow {
+                font-size: 0.62rem;
+            }
+
+            /* Framing note */
+            .framing {
+                padding: 1rem 1rem;
+                font-size: 0.875rem;
+                margin-bottom: 2.5rem;
+            }
+
+            /* Step cards — larger tap targets */
+            .step {
+                grid-template-columns: 36px 1fr;
+            }
+            .step-num {
+                min-height: 48px;
+                font-size: 0.85rem;
+            }
+            .step-body {
+                padding: 0.85rem 0.9rem;
+            }
+            .step-title {
+                font-size: 0.9rem;
+            }
+            .step-desc {
+                font-size: 0.84rem;
+            }
+
+            /* URL callout */
+            .url-callout {
+                flex-direction: column;
+                gap: 0.25rem;
+                padding: 0.75rem 0.9rem;
+            }
+            .url-callout-link {
+                font-size: 0.82rem;
+                word-break: break-all;
+            }
+
+            /* Prompt blocks — scrollable on small screens */
+            .prompt-block-head {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.4rem;
+                padding: 0.65rem 0.9rem;
+            }
+            .prompt-block-meta {
+                font-size: 0.65rem;
+            }
+            .prompt-block-body {
+                padding: 1rem 0.9rem;
+                font-size: 0.8rem;
+                line-height: 1.7;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+
+            /* Copy buttons — full width on mobile */
+            .copy-btn {
+                width: 100%;
+                justify-content: center;
+                padding: 0.75rem 1rem;
+                font-size: 0.85rem;
+                margin-top: 0.4rem;
+            }
+
+            /* Notes grid */
+            .notes-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            .note-card {
+                padding: 0.85rem 0.9rem;
+            }
+            .note-text {
+                font-size: 0.84rem;
+            }
+
+            /* Closing */
+            .closing {
+                padding: 1.5rem 1rem;
+            }
+            .closing p {
+                font-size: 1rem;
+            }
+
+            /* Optional badge wraps on mobile */
+            .optional-badge {
+                display: block;
+                margin-left: 0;
+                margin-top: 0.3rem;
+                width: fit-content;
+            }
+
+            /* Footer */
+            footer {
+                padding: 1.25rem 1rem;
+                font-size: 0.72rem;
+            }
+
+            /* Prose */
+            .prose {
+                font-size: 0.875rem;
+            }
+            .label-caps {
+                font-size: 0.65rem;
+            }
+        }
+
+        /* Mid-range tablets */
+        @media (min-width: 601px) and (max-width: 768px) {
+            .container {
+                padding: 2.5rem 1.5rem 4rem;
+            }
+            .masthead {
+                padding: 3.5rem 1.5rem 3rem;
+            }
+            .prompt-block-body {
+                font-size: 0.81rem;
+            }
+            .copy-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header class="masthead">
+    <div class="masthead-eyebrow">Astrology · Jungian Psychology · Self-Reflection</div>
+    <h1>Natal Chart Analysis<br><em>A Grounded Method</em></h1>
+    <div class="masthead-divider"></div>
+    <p class="masthead-sub">Treat astrology as a symbolic vocabulary for personality patterns — not fate, not prediction. A mirror, not a map.</p>
+</header>
+
+<div class="container">
+
+    <div class="framing">
+        <strong>What this is.</strong> This tool uses natal chart symbology as a structured starting point for personality pattern analysis, then layers Jungian archetypes to explain the psychological mechanisms behind those patterns. The output is a practical profile — not a horoscope. Be honest rather than flattering. If something doesn't track, say so.
+    </div>
+
+    <!-- STEP 0: GET YOUR CHART -->
+    <section class="section">
+        <div class="section-header">
+            <div class="section-num">0</div>
+            <div class="section-title-wrap">
+                <span class="section-eyebrow">Before you begin</span>
+                <div class="section-title">Get Your Natal Chart</div>
+            </div>
+        </div>
+
+        <p class="prose">You need a natal chart report before you can run the analysis. CafeAstrology provides a free, detailed report — no account required. You'll need your <strong>date, exact time, and place of birth</strong>.</p>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                    <div class="step-title">Go to the chart calculator</div>
+                    <div class="step-desc">Visit <a href="https://astro.cafeastrology.com/natal.php" target="_blank">astro.cafeastrology.com/natal.php</a> and enter your birth date, exact time, and place of birth. Birth time accuracy matters — even a 15-minute difference can shift the Ascendant sign, which shapes the whole analysis.</div>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                    <div class="step-title">Save the full report as PDF</div>
+                    <div class="step-desc">Once the report loads, use your browser's Print function (Cmd+P on Mac, Ctrl+P on Windows) and choose <strong>Save as PDF</strong>. Save the entire page — it includes the chart wheel, planet positions, house cusps, aspects table, and written interpretations. All of this is useful source material for the analysis.</div>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                    <div class="step-title">Open your AI assistant</div>
+                    <div class="step-desc">Go to <strong>Claude</strong> (claude.ai) or <strong>ChatGPT</strong> (chat.openai.com). Both can read PDF attachments. Start a new conversation and attach the saved PDF before sending Prompt 1 below.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="url-callout">
+            <a href="https://astro.cafeastrology.com/natal.php" target="_blank" class="url-callout-link">astro.cafeastrology.com/natal.php</a>
+            <span class="url-callout-note">Free · No account required · Saves as PDF</span>
+        </div>
+    </section>
+
+    <!-- PROMPT 1 -->
+    <section class="section">
+        <div class="section-header">
+            <div class="section-num">1</div>
+            <div class="section-title-wrap">
+                <span class="section-eyebrow">First Prompt</span>
+                <div class="section-title">Natal Chart Interpretation</div>
+            </div>
+        </div>
+
+        <p class="prose">Attach your PDF and send this prompt. The framing is critical — it tells the model to treat astrology as pattern-matching rather than prediction, and to flag where the analysis is accurate, overstated, or noise.</p>
+
+        <div class="prompt-section">
+            <div class="prompt-block">
+                <div class="prompt-block-head">
+                    <div class="prompt-block-meta">Send to Claude or ChatGPT · with natal chart PDF attached</div>
+                    <div class="prompt-block-tag">Astrology as Symbolic Model</div>
+                </div>
+                <div class="prompt-block-body" id="prompt1-text">I have my natal chart and a written interpretation.
+
+I'd like you to analyse it as a <strong>symbolic personality model</strong>, not as fate, prediction, or belief system.
+
+Please:
+
+<strong>1.</strong> Extract the core themes and tensions the chart points to — in plain language, minimal astrology jargon.
+
+<strong>2.</strong> Translate the chart into psychological and behavioural patterns — how I think, work, relate, handle pressure, autonomy, ambition, and meaning.
+
+<strong>3.</strong> Highlight where astrology is likely accurate, where it's overstated, and where it's probably misleading or symbolic only.
+
+<strong>4.</strong> Reframe the insights into a non-woo, practical profile I can actually reflect on.
+
+Treat this as pattern-matching and narrative analysis, not cosmic truth. Be honest rather than flattering. If something doesn't track, say so.
+
+I'm interested in <strong>insight, not certainty</strong>.</div>
+            </div>
+            <button class="copy-btn" onclick="copyText('prompt1-raw', this)">
+                <span class="copy-icon">⎘</span> Copy Prompt 1
+            </button>
+        </div>
+
+        <div class="label-caps">What to expect</div>
+        <p class="prose" style="margin-bottom:0;">The model will return a structured profile covering core tensions (e.g. expression vs. precision), behavioural patterns (how you think, work, handle pressure), an accuracy check flagging what's real signal vs. noise, and a practical summary. This is the foundation layer — mechanism comes next.</p>
+    </section>
+
+    <!-- PROMPT 2 -->
+    <section class="section">
+        <div class="section-header">
+            <div class="section-num">2</div>
+            <div class="section-title-wrap">
+                <span class="section-eyebrow">Follow-up Prompt <span class="optional-badge">Optional but recommended</span></span>
+                <div class="section-title">Jungian Archetypal Layer</div>
+            </div>
+        </div>
+
+        <p class="prose">Send this in the <strong>same conversation</strong>, immediately after Prompt 1. No need to re-attach the PDF — the model still has it in context. This layer adds the psychological mechanism: not just what the patterns are, but why they exist and where to interrupt them.</p>
+
+        <div class="prompt-section">
+            <div class="prompt-block">
+                <div class="prompt-block-head">
+                    <div class="prompt-block-meta">Send in the same session · no re-attachment needed</div>
+                    <div class="prompt-block-tag">Psychological Mechanism Layer</div>
+                </div>
+                <div class="prompt-block-body" id="prompt2-text">Now run a <strong>Jungian archetypal interpretation</strong> of the same chart.
+
+Use Jung's model not as mysticism but as a psychological mechanism layer:
+
+— The archetypes: Ego, Shadow, Persona, Anima/Animus
+— The four functions: Thinking, Feeling, Sensation, Intuition
+— The individuation arc as a developmental framework
+
+The goal is to understand <strong>why</strong> the behavioural patterns exist — the mechanism behind them — not just describe what they are.
+
+In particular:
+— What does the Shadow reveal about the rescue or over-functioning patterns?
+— What is the Inferior Function, and how does it fail under stress?
+— What does the individuation arc look like for this chart — where is the transition point?
+
+Be honest about where the Jungian framework earns its place and where it reaches beyond the evidence.</div>
+            </div>
+            <button class="copy-btn" onclick="copyText('prompt2-raw', this)">
+                <span class="copy-icon">⎘</span> Copy Prompt 2
+            </button>
+        </div>
+
+        <div class="label-caps">Why this matters</div>
+        <p class="prose" style="margin-bottom:0;">Prompt 1 tells you <em>what</em> the patterns are. Prompt 2 tells you <em>why</em> they exist and where to intervene. The Shadow analysis in particular tends to be the most actionable output — it reframes habitual behaviours as psychological mechanisms rather than personality traits, which changes how you work on them.</p>
+    </section>
+
+    <!-- PROMPT 3: SYNTHESIS -->
+    <section class="section">
+        <div class="section-header">
+            <div class="section-num">3</div>
+            <div class="section-title-wrap">
+                <span class="section-eyebrow">Optional Third Step</span>
+                <div class="section-title">Operating Model Synthesis</div>
+            </div>
+        </div>
+
+        <p class="prose">Once you have both analyses, ask the model to synthesise them into a usable operating model — the kind of thing you can actually interrupt in real time, not just reflect on afterwards.</p>
+
+        <div class="prompt-section">
+            <div class="prompt-block">
+                <div class="prompt-block-head">
+                    <div class="prompt-block-meta">Send after both prompts · same session</div>
+                    <div class="prompt-block-tag">Synthesis</div>
+                </div>
+                <div class="prompt-block-body" id="prompt3-text">Now synthesise both analyses into a practical operating model.
+
+Specifically:
+
+<strong>1.</strong> Describe the default behavioural loop — the sequence of steps I go through when risk is detected. Make it interruptible: name where in the sequence I can catch it before the habitual response kicks in.
+
+<strong>2.</strong> Give me 3–4 rules I can apply in the moment to interrupt the loop. Each rule should connect directly to the mechanism identified (not just generic advice).
+
+<strong>3.</strong> Write one synthesis sentence that captures the core pattern and the growth edge in a single line.
+
+Forget archetypes. Make this usable.</div>
+            </div>
+            <button class="copy-btn" onclick="copyText('prompt3-raw', this)">
+                <span class="copy-icon">⎘</span> Copy Prompt 3
+            </button>
+        </div>
+    </section>
+
+    <!-- NOTES -->
+    <section class="section">
+        <div class="section-header">
+            <div class="section-num">—</div>
+            <div class="section-title-wrap">
+                <span class="section-eyebrow">Before you start</span>
+                <div class="section-title">Things Worth Knowing</div>
+            </div>
+        </div>
+
+        <div class="notes-grid">
+            <div class="note-card">
+                <div class="note-icon">⏱</div>
+                <div class="note-text">
+                    <strong>Birth time matters</strong>
+                    Even 15 minutes can shift the Ascendant sign. If you don't know your exact time, try 12:00 noon — but note the Ascendant will be unreliable.
+                </div>
+            </div>
+            <div class="note-card">
+                <div class="note-icon">◈</div>
+                <div class="note-text">
+                    <strong>Two models, different strengths</strong>
+                    Claude tends to go deeper on mechanism and origin. ChatGPT tends to produce tighter loops and failure modes. Running both and comparing is worth the effort.
+                </div>
+            </div>
+            <div class="note-card">
+                <div class="note-icon">⚠</div>
+                <div class="note-text">
+                    <strong>Flag the noise</strong>
+                    Ask the model to explicitly label what's accurate, overstated, and symbolic-only. Without this instruction, models default to flattery.
+                </div>
+            </div>
+            <div class="note-card">
+                <div class="note-icon">→</div>
+                <div class="note-text">
+                    <strong>Description vs. mechanism</strong>
+                    Prompt 1 gives you description. Prompt 2 gives you mechanism. The Shadow analysis is almost always the most actionable output — don't skip it.
+                </div>
+            </div>
+            <div class="note-card">
+                <div class="note-icon">♛</div>
+                <div class="note-text">
+                    <strong>Great for others too</strong>
+                    Works well as a birthday exercise for a friend or partner. The non-predictive framing makes it easier to receive — it's a mirror, not a verdict.
+                </div>
+            </div>
+            <div class="note-card">
+                <div class="note-icon">◉</div>
+                <div class="note-text">
+                    <strong>Use it as a reference</strong>
+                    Save the output as a document you return to. The most useful insight tends to surface a few days after the initial read, not immediately.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="closing">
+        <p>Both frameworks agree on the same thing: <strong>description tells you what you are.</strong><br>A mechanism tells you where to intervene. That's the difference between insight and leverage.</p>
+    </div>
+
+</div>
+
+<footer>
+    Natal Chart Analysis Tool · Symbolic & Jungian model only · Not predictive · Not diagnostic
+</footer>
+
+<!-- Hidden plain-text versions for clipboard -->
+<textarea id="prompt1-raw" style="position:absolute;left:-9999px;" readonly>I have my natal chart and a written interpretation.
+
+I'd like you to analyse it as a symbolic personality model, not as fate, prediction, or belief system.
+
+Please:
+
+1. Extract the core themes and tensions the chart points to — in plain language, minimal astrology jargon.
+
+2. Translate the chart into psychological and behavioural patterns — how I think, work, relate, handle pressure, autonomy, ambition, and meaning.
+
+3. Highlight where astrology is likely accurate, where it's overstated, and where it's probably misleading or symbolic only.
+
+4. Reframe the insights into a non-woo, practical profile I can actually reflect on.
+
+Treat this as pattern-matching and narrative analysis, not cosmic truth. Be honest rather than flattering. If something doesn't track, say so.
+
+I'm interested in insight, not certainty.</textarea>
+
+<textarea id="prompt2-raw" style="position:absolute;left:-9999px;" readonly>Now run a Jungian archetypal interpretation of the same chart.
+
+Use Jung's model not as mysticism but as a psychological mechanism layer:
+
+— The archetypes: Ego, Shadow, Persona, Anima/Animus
+— The four functions: Thinking, Feeling, Sensation, Intuition
+— The individuation arc as a developmental framework
+
+The goal is to understand why the behavioural patterns exist — the mechanism behind them — not just describe what they are.
+
+In particular:
+— What does the Shadow reveal about the rescue or over-functioning patterns?
+— What is the Inferior Function, and how does it fail under stress?
+— What does the individuation arc look like for this chart — where is the transition point?
+
+Be honest about where the Jungian framework earns its place and where it reaches beyond the evidence.</textarea>
+
+<textarea id="prompt3-raw" style="position:absolute;left:-9999px;" readonly>Now synthesise both analyses into a practical operating model.
+
+Specifically:
+
+1. Describe the default behavioural loop — the sequence of steps I go through when risk is detected. Make it interruptible: name where in the sequence I can catch it before the habitual response kicks in.
+
+2. Give me 3–4 rules I can apply in the moment to interrupt the loop. Each rule should connect directly to the mechanism identified (not just generic advice).
+
+3. Write one synthesis sentence that captures the core pattern and the growth edge in a single line.
+
+Forget archetypes. Make this usable.</textarea>
+
+<script>
+    function copyText(sourceId, btn) {
+        const text = document.getElementById(sourceId).value;
+        navigator.clipboard.writeText(text).then(() => {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<span class="copy-icon">✓</span> Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.innerHTML = orig;
+                btn.classList.remove('copied');
+            }, 2200);
+        }).catch(() => {
+            // Fallback for older browsers
+            const el = document.getElementById(sourceId);
+            el.style.position = 'fixed';
+            el.style.left = '0';
+            el.select();
+            document.execCommand('copy');
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
+            btn.innerHTML = '<span class="copy-icon">✓</span> Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.innerHTML = '<span class="copy-icon">⎘</span> Copy Prompt';
+                btn.classList.remove('copied');
+            }, 2200);
+        });
+    }
+</script>
+
+</body>
+</html>
